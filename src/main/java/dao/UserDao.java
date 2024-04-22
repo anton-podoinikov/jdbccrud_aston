@@ -8,8 +8,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static constants.DBConstants.*;
-
 /**
  * Класс UserDao предоставляет доступ к данным пользователей в базе данных.
  * Включает методы для получения, добавления, обновления и удаления пользователей.
@@ -21,20 +19,18 @@ public class UserDao extends DBConnection {
      *
      * @param id Идентификатор пользователя.
      * @return User объект пользователя, если он найден, иначе null.
-     * @throws SQLException           при ошибках SQL запросов.
-     * @throws IOException            при ошибках ввода/вывода.
-     * @throws ClassNotFoundException если не найден драйвер JDBC.
+     * @throws SQLException при ошибках SQL запросов.
      */
-    public User getUserById(int id) throws SQLException, IOException, ClassNotFoundException {
+    public User getUserById(int id) throws SQLException {
         String sql = "SELECT * FROM users WHERE id = ?";
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setInt(1, id);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return new User(resultSet.getInt(ID_COLUMN),
-                            resultSet.getString(USER_NAME_COLUMN),
-                            resultSet.getString(EMAIL_NAME_COLUMN));
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if (rs.next()) {
+                    return new User(rs.getInt("id"),
+                            rs.getString("username"),
+                            rs.getString("email"));
                 }
             }
         }
@@ -45,20 +41,18 @@ public class UserDao extends DBConnection {
      * Получает список всех пользователей из базы данных.
      *
      * @return List список всех пользователей.
-     * @throws SQLException           при ошибках SQL запросов.
-     * @throws IOException            при ошибках ввода/вывода.
-     * @throws ClassNotFoundException если не найден драйвер JDBC.
+     * @throws SQLException при ошибках SQL запросов.
      */
-    public List<User> getAllUsers() throws SQLException, IOException, ClassNotFoundException {
+    public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users";
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(sql)) {
-            while (resultSet.next()) {
-                users.add(new User(resultSet.getInt(ID_COLUMN),
-                        resultSet.getString(USER_NAME_COLUMN),
-                        resultSet.getString(EMAIL_NAME_COLUMN)));
+             ResultSet rs = statement.executeQuery(sql)) {
+            while (rs.next()) {
+                users.add(new User(rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("email")));
             }
         }
         return users;
@@ -68,11 +62,9 @@ public class UserDao extends DBConnection {
      * Добавляет нового пользователя в базу данных.
      *
      * @param user Объект пользователя для добавления.
-     * @throws SQLException           при ошибках SQL запросов.
-     * @throws IOException            при ошибках ввода/вывода.
-     * @throws ClassNotFoundException если не найден драйвер JDBC.
+     * @throws SQLException при ошибках SQL запросов.
      */
-    public void addUser(User user) throws SQLException, IOException, ClassNotFoundException {
+    public void addUser(User user) throws SQLException {
         String sql = "INSERT INTO users (username, email) VALUES (?, ?)";
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -86,11 +78,9 @@ public class UserDao extends DBConnection {
      * Обновляет данные пользователя в базе данных.
      *
      * @param user Объект пользователя с обновленными данными.
-     * @throws SQLException           при ошибках SQL запросов.
-     * @throws IOException            при ошибках ввода/вывода.
-     * @throws ClassNotFoundException если не найден драйвер JDBC.
+     * @throws SQLException при ошибках SQL запросов.
      */
-    public void updateUser(User user) throws SQLException, IOException, ClassNotFoundException {
+    public void updateUser(User user) throws SQLException {
         String sql = "UPDATE users SET username = ?, email = ? WHERE id = ?";
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -116,7 +106,7 @@ public class UserDao extends DBConnection {
      * @throws SQLException           Если возникла ошибка при выполнении транзакции, включая ошибки обновления данных.
      *                                В таком случае транзакция откатывается.
      */
-    public void deleteUser(int id) throws SQLException, IOException, ClassNotFoundException {
+    public void deleteUser(int id) throws SQLException {
         String sqlDeleteOrderProducts = "DELETE FROM order_products WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)";
         String sqlDeleteOrders = "DELETE FROM orders WHERE user_id = ?";
         String sqlDeleteUser = "DELETE FROM users WHERE id = ?";
@@ -154,5 +144,4 @@ public class UserDao extends DBConnection {
             }
         }
     }
-
 }

@@ -3,8 +3,6 @@ package converter;
 import dao.ProductDao;
 import dao.UserDao;
 import model.dto.OrderDto;
-import model.dto.ProductDto;
-import model.dto.UserDto;
 import model.entity.Order;
 import model.entity.Product;
 import model.entity.User;
@@ -13,6 +11,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Класс OrderConverter предоставляет функциональность для конвертации
@@ -30,28 +29,26 @@ public class OrderConverter {
      * @param orderDto DTO заказа, который нужно преобразовать в сущность.
      * @return сущность Order, соответствующая предоставленному DTO.
      * @throws SQLException             при ошибках доступа к базе данных.
-     * @throws IOException              при ошибках ввода/вывода.
-     * @throws ClassNotFoundException   если класс для JDBC драйвера не найден.
      * @throws IllegalStateException    если не найден пользователь или продукт.
      * @throws IllegalArgumentException если DTO не содержит продуктов.
      */
-    public Order convertDTOToEntity(OrderDto orderDto) throws SQLException, IOException, ClassNotFoundException {
+    public Order convertDTOToEntity(OrderDto orderDto) throws SQLException {
         UserDao userDao = new UserDao();
         ProductDao productDao = new ProductDao();
 
-        User user = userDao.getUserById(orderDto.getUser().getId());
+        User user = userDao.getUserById(orderDto.getUserId());
         if (user == null) {
-            throw new IllegalStateException("User with ID " + orderDto.getUser().getId() + " not found");
+            throw new IllegalStateException("Пользователь с идентификатором " + orderDto.getUserId() + " не найден");
         }
 
         List<Product> products = new ArrayList<>();
-        if (orderDto.getProducts() == null || orderDto.getProducts().isEmpty()) {
-            throw new IllegalArgumentException("An order must have at least one product.");
+        if (orderDto.getProductIds() == null || orderDto.getProductIds().isEmpty()) {
+            throw new IllegalArgumentException("В заказе должен быть хотя бы один товар.");
         }
-        for (ProductDto productDto : orderDto.getProducts()) {
-            Product product = productDao.getProductById(productDto.getId());
+        for (Integer productId : orderDto.getProductIds()) {
+            Product product = productDao.getProductById(productId);
             if (product == null) {
-                throw new IllegalStateException("Product with ID " + productDto.getId() + " not found");
+                throw new IllegalStateException("Продукт с идентификатором " + productId + " не найден");
             }
             products.add(product);
         }
@@ -62,6 +59,7 @@ public class OrderConverter {
         return order;
     }
 
+
     /**
      * Конвертирует сущность Order в OrderDto.
      * Использует данные о заказе для создания DTO, который содержит базовую
@@ -71,10 +69,13 @@ public class OrderConverter {
      * @return DTO заказа, содержащий данные из сущности.
      */
     public OrderDto convertEntityToDto(Order order) {
-        List<ProductDto> productDtos = order.getProducts().stream()
-                .map(p -> new ProductDto(p.getId(), p.getName(), p.getPrice()))
-                .toList();
-        UserDto userDto = new UserDto(order.getUser().getId(), order.getUser().getUsername(), order.getUser().getEmail());
-        return new OrderDto(order.getId(), userDto, productDtos);
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(order.getId());
+        orderDto.setUserId(order.getUser().getId());
+        List<OrderDto.ProductInfo> productInfos = order.getProducts().stream()
+                .map(p -> new OrderDto.ProductInfo(p.getId(), p.getName(), p.getPrice()))
+                .collect(Collectors.toList());
+        orderDto.setProducts(productInfos);
+        return orderDto;
     }
 }

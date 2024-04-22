@@ -3,27 +3,17 @@ package database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DBConnection {
     private static final Logger logger = LoggerFactory.getLogger(DBConnection.class);
 
-    /**
-     * Создает и возвращает подключение к базе данных.
-     * Этот метод загружает конфигурационные параметры из файла свойств,
-     * инициализирует JDBC драйвер и создает подключение к базе данных.
-     *
-     * @return {@link Connection} объект, представляющий подключение к базе данных.
-     * @throws SQLException           если происходит ошибка SQL при создании подключения к базе данных.
-     * @throws ClassNotFoundException если JDBC драйвер не найден.
-     */
-    public Connection getConnection() throws SQLException, ClassNotFoundException {
-        String url = System.getProperty("database.url");
-        String username = System.getProperty("database.username");
-        String password = System.getProperty("database.password");
-        String driver = System.getProperty("database.driver");
+    public Connection getConnection() {
+        String url = ConfigLoader.getProperty("database.url");
+        String username = ConfigLoader.getProperty("database.username");
+        String password = ConfigLoader.getProperty("database.password");
+        String driver = ConfigLoader.getProperty("database.driver");
 
         if (driver == null) {
             throw new IllegalStateException("Драйвер не установлен. Проверьте свойства или конфигурации вашей системы.");
@@ -32,14 +22,19 @@ public class DBConnection {
         try {
             Class.forName(driver);
         } catch (ClassNotFoundException e) {
-            logger.error("Ошибка загрузки драйвера JDBC.: " + driver);
-            throw e;
+            logger.error("Ошибка загрузки драйвера JDBC: " + driver, e);
+            throw new RuntimeException(e);
         }
 
         if (url == null || username == null || password == null) {
             throw new IllegalStateException("Параметры подключения к базе данных заданы не полностью. (url/username/password).");
         }
 
-        return DriverManager.getConnection(url, username, password);
+        try {
+            return DriverManager.getConnection(url, username, password);
+        } catch (SQLException e) {
+            logger.error("Ошибка при подключении к базе данных: ", e);
+            throw new RuntimeException(e);
+        }
     }
 }

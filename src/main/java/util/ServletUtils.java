@@ -11,6 +11,9 @@ import java.io.PrintWriter;
  */
 public class ServletUtils {
 
+    /**
+     * Приватный конструктор для предотвращения создания экземпляра утилитного класса.
+     */
     private ServletUtils() {
     }
 
@@ -20,8 +23,8 @@ public class ServletUtils {
      * что обеспечивает корректное отображение содержимого и его правильное интерпретирование клиентами.
      *
      * @param response Объект HttpServletResponse, который используется для отправки данных клиенту.
-     * @param message  Сообщение или данные в формате JSON, которые будут отправлены клиенту.
-     * @param status   HTTP статус код ответа.
+     * @param message Сообщение или данные в формате JSON, которые будут отправлены клиенту.
+     * @param status HTTP статус код ответа.
      * @throws IOException Если произошла ошибка ввода-вывода при попытке получить Writer от ответа.
      */
     public static void writeResponse(HttpServletResponse response,
