@@ -30,8 +30,8 @@ public class UserDaoTest {
     @Container
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("test")
-            .withUsername("postgres")
-            .withPassword("postgres");
+            .withUsername("test")
+            .withPassword("test");
 
     /**
      * Подготовка тестового окружения перед каждым тестом, включая миграцию базы данных.

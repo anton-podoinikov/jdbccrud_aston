@@ -29,8 +29,8 @@ public class ProductDaoTest {
     @Container
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("test")
-            .withUsername("postgres")
-            .withPassword("postgres");
+            .withUsername("test")
+            .withPassword("test");
 
     /**
      * Подготовка тестовой среды, включая миграцию базы данных и установку системных свойств для доступа к БД.

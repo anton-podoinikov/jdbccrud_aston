@@ -23,8 +23,8 @@ public class DBConnectionIntegrationTest {
     @Container
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("test")
-            .withUsername("postgres")
-            .withPassword("postgres");
+            .withUsername("test")
+            .withPassword("test");
 
     private DBConnection dbConnection;
 

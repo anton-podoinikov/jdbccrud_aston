@@ -29,8 +29,8 @@ public class OrderDaoTest {
     @Container
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("test")
-            .withUsername("postgres")
-            .withPassword("postgres");
+            .withUsername("test")
+            .withPassword("test");
 
     /**
      * Настройка тестовой среды перед каждым тестом, включая миграцию базы данных.
