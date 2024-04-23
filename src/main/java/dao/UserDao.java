@@ -1,9 +1,8 @@
 package dao;
 
+import database.ConnectionFactory;
 import model.entity.User;
-import database.DBConnection;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.List;
  * Класс UserDao предоставляет доступ к данным пользователей в базе данных.
  * Включает методы для получения, добавления, обновления и удаления пользователей.
  */
-public class UserDao extends DBConnection {
+public class UserDao {
 
     /**
      * Получает пользователя по его идентификатору из базы данных.
@@ -23,7 +22,7 @@ public class UserDao extends DBConnection {
      */
     public User getUserById(int id) throws SQLException {
         String sql = "SELECT * FROM users WHERE id = ?";
-        try (Connection connection = getConnection();
+        try (Connection connection = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setInt(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -46,7 +45,7 @@ public class UserDao extends DBConnection {
     public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users";
-        try (Connection connection = getConnection();
+        try (Connection connection = ConnectionFactory.getConnection();
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery(sql)) {
             while (rs.next()) {
@@ -66,7 +65,7 @@ public class UserDao extends DBConnection {
      */
     public void addUser(User user) throws SQLException {
         String sql = "INSERT INTO users (username, email) VALUES (?, ?)";
-        try (Connection connection = getConnection();
+        try (Connection connection = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.setString(2, user.getEmail());
@@ -82,7 +81,7 @@ public class UserDao extends DBConnection {
      */
     public void updateUser(User user) throws SQLException {
         String sql = "UPDATE users SET username = ?, email = ? WHERE id = ?";
-        try (Connection connection = getConnection();
+        try (Connection connection = ConnectionFactory.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.setString(2, user.getEmail());
@@ -101,19 +100,18 @@ public class UserDao extends DBConnection {
      * @throws SQLException           Если происходит ошибка SQL при выполнении запросов.
      *                                Это может быть связано с нарушением целостности данных,
      *                                например, когда пытаемся удалить пользователя, который уже используется в других таблицах.
-     * @throws IOException            Если возникают ошибки ввода/вывода.
-     * @throws ClassNotFoundException Если не найден драйвер JDBC.
      * @throws SQLException           Если возникла ошибка при выполнении транзакции, включая ошибки обновления данных.
      *                                В таком случае транзакция откатывается.
      */
     public void deleteUser(int id) throws SQLException {
-        String sqlDeleteOrderProducts = "DELETE FROM order_products WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)";
+        String sqlDeleteOrderProducts = "DELETE FROM order_products WHERE order_id " +
+                "IN (SELECT id FROM orders WHERE user_id = ?)";
         String sqlDeleteOrders = "DELETE FROM orders WHERE user_id = ?";
         String sqlDeleteUser = "DELETE FROM users WHERE id = ?";
 
         Connection connection = null;
         try {
-            connection = getConnection();
+            connection = ConnectionFactory.getConnection();
             connection.setAutoCommit(false);
 
             try (PreparedStatement psOrderProducts = connection.prepareStatement(sqlDeleteOrderProducts)) {

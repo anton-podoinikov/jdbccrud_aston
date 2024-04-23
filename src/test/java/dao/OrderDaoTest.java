@@ -1,15 +1,15 @@
-package daotest;
+package dao;
 
-import dao.OrderDao;
 import model.entity.Order;
 import model.entity.Product;
 import model.entity.User;
-import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import database.ConnectionFactory;
 
 import java.sql.*;
 import java.util.Arrays;
@@ -27,28 +27,22 @@ public class OrderDaoTest {
      * Контейнер PostgreSQL, который используется для создания изолированной тестовой базы данных.
      */
     @Container
-    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
+    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres")
             .withDatabaseName("test")
             .withUsername("test")
-            .withPassword("test");
+            .withPassword("test")
+            .withInitScript("init.sql");
 
-    /**
-     * Настройка тестовой среды перед каждым тестом, включая миграцию базы данных.
-     */
-    @BeforeEach
-    void setUp() {
-        Flyway flyway = Flyway.configure()
-                .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
-                .locations("classpath:db.migration")
-                .cleanDisabled(false)
-                .load();
-        flyway.clean();
-        flyway.migrate();
+    @BeforeAll
+    public static void setupDatabaseConnection() {
+        postgres.start();
+        ConnectionFactory.configureEnvironment(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+    }
 
-        System.setProperty("database.url", postgres.getJdbcUrl());
-        System.setProperty("database.username", postgres.getUsername());
-        System.setProperty("database.password", postgres.getPassword());
-        System.setProperty("database.driver", "org.postgresql.Driver");
+    @AfterAll
+    public static void tearDownDatabaseConnection() {
+        postgres.stop();
+        ConnectionFactory.clearEnvironment();
     }
 
     /**

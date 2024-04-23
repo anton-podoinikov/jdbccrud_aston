@@ -1,9 +1,6 @@
-package databasetest;
+package database;
 
-import database.DBConnection;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -21,26 +18,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 public class DBConnectionIntegrationTest {
     @Container
-    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
+    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres")
             .withDatabaseName("test")
             .withUsername("test")
-            .withPassword("test");
+            .withPassword("test")
+            .withInitScript("init.sql");
 
-    private DBConnection dbConnection;
+    @BeforeAll
+    public static void setupDatabaseConnection() {
+        postgres.start();
+        ConnectionFactory.configureEnvironment(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+    }
 
-    /**
-     * Настройка тестового окружения перед каждым тестом. Устанавливает системные свойства, необходимые для конфигурации
-     * подключения к базе данных.
-     */
-    @BeforeEach
-    void setUp() {
-        // Настройка системных свойств
-        System.setProperty("database.url", postgres.getJdbcUrl());
-        System.setProperty("database.username", postgres.getUsername());
-        System.setProperty("database.password", postgres.getPassword());
-        System.setProperty("database.driver", "org.postgresql.Driver");
-
-        dbConnection = new DBConnection();
+    @AfterAll
+    public static void tearDownDatabaseConnection() {
+        postgres.stop();
+        ConnectionFactory.clearEnvironment();
     }
 
     /**
@@ -61,7 +54,7 @@ public class DBConnectionIntegrationTest {
     @Test
     void getConnection_Success() throws Exception {
         // Проверка получения подключения
-        try (Connection connection = dbConnection.getConnection()) {
+        try (Connection connection = ConnectionFactory.getConnection()) {
             assertNotNull(connection, "Подключение к базе данных не должно быть null");
             assertFalse(connection.isClosed(), "Подключение к базе данных не должно быть закрыто");
         }

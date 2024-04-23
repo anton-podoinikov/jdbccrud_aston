@@ -16,38 +16,24 @@ import java.util.List;
  */
 @Data
 public class User {
-    /**
-     * Идентификатор пользователя. Уникален для каждого пользователя.
-     */
+
     private int id;
 
-    /**
-     * Имя пользователя, используемое для идентификации и взаимодействия в системе.
-     */
     private String username;
 
-    /**
-     * Электронная почта пользователя, используемая для коммуникации и уведомлений.
-     */
     private String email;
 
-    /**
-     * Список заказов, сделанных пользователем. Это позволяет отслеживать все заказы,
-     * сделанные конкретным пользователем.
-     */
     private List<Order> orders;
 
-    /**
-     * Конструктор для создания объекта пользователя с инициализацией его основных атрибутов.
-     *
-     * @param id Идентификатор пользователя.
-     * @param username Имя пользователя.
-     * @param email Электронная почта пользователя.
-     */
     public User(int id, String username, String email) {
         this.id = id;
         this.username = username;
         this.email = email;
-        this.orders = new ArrayList<>();  // Инициализация пустого списка заказов
+        this.orders = new ArrayList<>();
+    }
+
+    public User(String username, String email) {
+        this.username = username;
+        this.email = email;
     }
 }

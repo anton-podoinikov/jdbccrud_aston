@@ -1,10 +1,10 @@
-package daotest;
+package dao;
 
-import dao.ProductDao;
+import database.ConnectionFactory;
 import model.entity.Product;
-import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -21,36 +21,28 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 public class ProductDaoTest {
 
-    private ProductDao productDao;
+    private ProductDao productDao = new ProductDao();
 
     /**
-     * Контейнер для PostgreSQL, настроенный для тестирования.
+     * Контейнер PostgreSQL, который используется для создания изолированной тестовой базы данных.
      */
     @Container
-    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
+    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres")
             .withDatabaseName("test")
             .withUsername("test")
-            .withPassword("test");
+            .withPassword("test")
+            .withInitScript("init.sql");
 
-    /**
-     * Подготовка тестовой среды, включая миграцию базы данных и установку системных свойств для доступа к БД.
-     */
-    @BeforeEach
-    void setUp() {
-        Flyway flyway = Flyway.configure()
-                .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
-                .locations("classpath:db.migration")
-                .cleanDisabled(false)
-                .load();
-        flyway.clean();
-        flyway.migrate();
+    @BeforeAll
+    public static void setupDatabaseConnection() {
+        postgres.start();
+        ConnectionFactory.configureEnvironment(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+    }
 
-        productDao = new ProductDao();
-
-        System.setProperty("database.url", postgres.getJdbcUrl());
-        System.setProperty("database.username", postgres.getUsername());
-        System.setProperty("database.password", postgres.getPassword());
-        System.setProperty("database.driver", "org.postgresql.Driver");
+    @AfterAll
+    public static void tearDownDatabaseConnection() {
+        postgres.stop();
+        ConnectionFactory.clearEnvironment();
     }
 
     /**
@@ -58,9 +50,8 @@ public class ProductDaoTest {
      */
     @Test
     void testGetProductById() throws Exception {
-        productDao = new ProductDao();
-        Product expected = productDao.getProductById(1); // Используем предустановленный продукт
-        assertNotNull(expected, "Product should not be null");
+        Product expected = productDao.getProductById(1);
+        assertNotNull(expected, "Товар не должен быть нулевым");
         assertEquals("Кола", expected.getName());
         assertEquals(1.50, expected.getPrice(), 0.01);
     }
@@ -72,8 +63,8 @@ public class ProductDaoTest {
     @Test
      void testGetAllProducts() throws Exception {
         List<Product> products = productDao.getAllProducts();
-        Assertions.assertFalse(products.isEmpty()); // Проверка, что в базе уже есть продукты
-        assertTrue(products.size() >= 12); // Количество начальных продуктов
+        Assertions.assertFalse(products.isEmpty());
+        assertTrue(products.size() >= 12);
     }
 
     /**
@@ -82,7 +73,7 @@ public class ProductDaoTest {
      */
     @Test
      void testAddProduct() throws Exception {
-        Product newProduct = new Product("Новый продукт", 10.99);
+        Product newProduct = new Product(13,"Новый продукт", 10.99);
         productDao.addProduct(newProduct);
         List<Product> products = productDao.getAllProducts();
         assertTrue(products.stream().anyMatch(p -> p.getName().equals("Новый продукт")));
@@ -94,12 +85,12 @@ public class ProductDaoTest {
      */
     @Test
      void testUpdateProduct() throws Exception {
-        Product product = productDao.getProductById(1); // Получаем существующий продукт
-        product.setName("Обновленная Кола");
+        Product product = productDao.getProductById(2);
+        product.setName("Обновленное Молоко");
         product.setPrice(2.00);
         productDao.updateProduct(product);
-        Product updatedProduct = productDao.getProductById(1);
-        assertEquals("Обновленная Кола", updatedProduct.getName());
+        Product updatedProduct = productDao.getProductById(2);
+        assertEquals("Обновленное Молоко", updatedProduct.getName());
         assertEquals(2.00, updatedProduct.getPrice(), 0.01);
     }
 
@@ -109,7 +100,7 @@ public class ProductDaoTest {
      */
     @Test
      void testDeleteProduct() throws Exception {
-        int productIdToDelete = 5; // Идентификатор продукта, который существует
+        int productIdToDelete = 5;
         productDao.deleteProduct(productIdToDelete);
         assertNull(productDao.getProductById(productIdToDelete));
     }

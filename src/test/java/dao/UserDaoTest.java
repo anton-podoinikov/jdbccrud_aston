@@ -1,10 +1,9 @@
-package daotest;
+package dao;
 
-import dao.ProductDao;
-import dao.UserDao;
+import database.ConnectionFactory;
 import model.entity.User;
-import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -22,36 +21,28 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 public class UserDaoTest {
 
-    private UserDao userDao;
+    private UserDao userDao = new UserDao();
 
     /**
      * Контейнер PostgreSQL, настроенный для использования в тестах.
      */
     @Container
-    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
+    public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres")
             .withDatabaseName("test")
             .withUsername("test")
-            .withPassword("test");
+            .withPassword("test")
+            .withInitScript("init.sql");
 
-    /**
-     * Подготовка тестового окружения перед каждым тестом, включая миграцию базы данных.
-     */
-    @BeforeEach
-    void setUp() {
-        Flyway flyway = Flyway.configure()
-                .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
-                .locations("classpath:db.migration")
-                .cleanDisabled(false)
-                .load();
-        flyway.clean();
-        flyway.migrate();
+    @BeforeAll
+    public static void setupDatabaseConnection() {
+        postgres.start();
+        ConnectionFactory.configureEnvironment(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+    }
 
-        userDao = new UserDao();
-
-        System.setProperty("database.url", postgres.getJdbcUrl());
-        System.setProperty("database.username", postgres.getUsername());
-        System.setProperty("database.password", postgres.getPassword());
-        System.setProperty("database.driver", "org.postgresql.Driver");
+    @AfterAll
+    public static void tearDownDatabaseConnection() {
+        postgres.stop();
+        ConnectionFactory.clearEnvironment();
     }
 
     /**
@@ -73,7 +64,7 @@ public class UserDaoTest {
 
     @Test
     void testAddUser() throws Exception {
-        User newUser = new User("NewUser", "newuser@example.com");
+        User newUser = new User("New User", "newuser@example.com");
         userDao.addUser(newUser);
         List<User> users = userDao.getAllUsers();
         assertTrue(users.stream().anyMatch(u -> u.getEmail().equals("newuser@example.com")));
@@ -86,7 +77,7 @@ public class UserDaoTest {
     @Test
     void testGetAllUsers() throws Exception {
         List<User> users = userDao.getAllUsers();
-        assertEquals(4, users.size()); // Check that all pre-inserted users are retrieved
+        assertEquals(5, users.size()); // Check that all pre-inserted users are retrieved
         assertTrue(users.stream().anyMatch(u -> u.getUsername().equals("Vasya")));
     }
 
@@ -109,9 +100,9 @@ public class UserDaoTest {
      */
     @Test
     void testDeleteUser() throws Exception {
-        userDao.deleteUser(4);
-        assertNull(userDao.getUserById(4));
+        userDao.deleteUser(5);
+        assertNull(userDao.getUserById(5));
         List<User> users = userDao.getAllUsers();
-        assertEquals(3, users.size()); // Verify one less user after deletion
+        assertEquals(4, users.size()); // Verify one less user after deletion
     }
 }

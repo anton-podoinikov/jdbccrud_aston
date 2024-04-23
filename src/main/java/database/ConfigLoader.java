@@ -12,7 +12,8 @@ public class ConfigLoader {
     }
 
     private static void loadProperties() {
-        try (InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream("config.properties")) {
+        try (InputStream inputStream = ConfigLoader.class.getClassLoader()
+                .getResourceAsStream("config.properties")) {
             if (inputStream == null) {
                 throw new IllegalStateException("Не удалось найти файл конфигурации 'config.properties'.");
             }
